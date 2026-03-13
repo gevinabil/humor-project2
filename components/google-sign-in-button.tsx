@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import { Button } from "@/components/ui";
 
 export function GoogleSignInButton() {
   const [error, setError] = useState<string | null>(null);
@@ -39,15 +40,11 @@ export function GoogleSignInButton() {
   };
 
   return (
-    <div>
-      <button onClick={onSignIn} disabled={loading}>
+    <div className="stack-tight">
+      <Button onClick={onSignIn} disabled={loading}>
         {loading ? "Redirecting..." : "Continue with Google"}
-      </button>
-      {error ? (
-        <p style={{ marginTop: "0.5rem", color: "#b91c1c" }}>
-          Login error: {error}
-        </p>
-      ) : null}
+      </Button>
+      {error ? <p>Login error: {error}</p> : null}
     </div>
   );
 }

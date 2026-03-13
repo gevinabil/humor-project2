@@ -1,36 +1,86 @@
 import { revalidatePath } from "next/cache";
-import { requireSuperAdmin } from "@/lib/auth/guards";
+import { AdminPage, AdminTableCard } from "@/components/admin-data";
+import { Button, Card, Field, Input, Textarea } from "@/components/ui";
+import { requireSuperAdminDataAccess } from "@/lib/auth/guards";
+import { getBoolean, getFile, getOptionalString, getString } from "@/lib/admin/forms";
+
+const IMAGE_BUCKET = "images";
 
 async function createImage(formData: FormData) {
   "use server";
-  const { supabase } = await requireSuperAdmin();
-  const url = String(formData.get("url") ?? "").trim();
-  const title = String(formData.get("title") ?? "").trim();
 
-  if (!url) return;
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
+  const file = getFile(formData, "image_file");
+  const manualUrl = getOptionalString(formData, "url");
+  const additionalContext = getOptionalString(formData, "additional_context");
+  const imageDescription = getOptionalString(formData, "image_description");
+  const celebrityRecognition = getOptionalString(formData, "celebrity_recognition");
+  const isCommonUse = getBoolean(formData, "is_common_use");
+  const isPublic = getBoolean(formData, "is_public");
 
-  await supabase.from("images").insert({
+  let url = manualUrl;
+
+  if (file) {
+    const extension = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+    const path = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await adminSupabase.storage.from(IMAGE_BUCKET).upload(path, file, {
+      cacheControl: "3600",
+      contentType: file.type || undefined,
+      upsert: false
+    });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    const { data } = adminSupabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+    url = data.publicUrl;
+  }
+
+  if (!url) {
+    return;
+  }
+
+  await adminSupabase.from("images").insert({
     url,
-    title: title || null
+    profile_id: user.id,
+    additional_context: additionalContext,
+    image_description: imageDescription,
+    celebrity_recognition: celebrityRecognition,
+    is_common_use: isCommonUse,
+    is_public: isPublic
   });
 
   revalidatePath("/admin/images");
+  revalidatePath("/admin");
 }
 
 async function updateImage(formData: FormData) {
   "use server";
-  const { supabase } = await requireSuperAdmin();
-  const id = String(formData.get("id") ?? "");
-  const url = String(formData.get("url") ?? "").trim();
-  const title = String(formData.get("title") ?? "").trim();
 
-  if (!id || !url) return;
+  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const id = getString(formData, "id");
+  const url = getString(formData, "url");
+  const additionalContext = getOptionalString(formData, "additional_context");
+  const imageDescription = getOptionalString(formData, "image_description");
+  const celebrityRecognition = getOptionalString(formData, "celebrity_recognition");
+  const isCommonUse = getBoolean(formData, "is_common_use");
+  const isPublic = getBoolean(formData, "is_public");
 
-  await supabase
+  if (!id || !url) {
+    return;
+  }
+
+  await adminSupabase
     .from("images")
     .update({
       url,
-      title: title || null
+      additional_context: additionalContext,
+      image_description: imageDescription,
+      celebrity_recognition: celebrityRecognition,
+      is_common_use: isCommonUse,
+      is_public: isPublic,
+      modified_datetime_utc: new Date().toISOString()
     })
     .eq("id", id);
 
@@ -39,78 +89,150 @@ async function updateImage(formData: FormData) {
 
 async function deleteImage(formData: FormData) {
   "use server";
-  const { supabase } = await requireSuperAdmin();
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
 
-  await supabase.from("images").delete().eq("id", id);
+  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const id = getString(formData, "id");
+
+  if (!id) {
+    return;
+  }
+
+  await adminSupabase.from("images").delete().eq("id", id);
   revalidatePath("/admin/images");
+  revalidatePath("/admin");
 }
 
 type ImageRow = {
   id: string;
+  created_datetime_utc: string | null;
+  modified_datetime_utc: string | null;
   url: string;
-  title: string | null;
-  created_at: string | null;
+  is_common_use: boolean;
+  profile_id: string | null;
+  additional_context: string | null;
+  is_public: boolean;
+  image_description: string | null;
+  celebrity_recognition: string | null;
 };
 
 export default async function ImagesPage() {
-  const { supabase } = await requireSuperAdmin();
-  const { data, error } = await supabase
+  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { data, error } = await adminSupabase
     .from("images")
-    .select("id, url, title, created_at")
-    .order("created_at", { ascending: false })
+    .select(
+      "id, created_datetime_utc, modified_datetime_utc, url, is_common_use, profile_id, additional_context, is_public, image_description, celebrity_recognition"
+    )
+    .order("created_datetime_utc", { ascending: false })
     .limit(100);
 
   if (error) {
     return (
-      <section className="card">
-        <h1>Images</h1>
-        <p>Failed to load images: {error.message}</p>
-      </section>
+      <AdminPage eyebrow="Assets" title="Images" description="Create, read, update, and delete images, including bucket uploads.">
+        <AdminTableCard title="Load Error">
+          <p>Failed to load images: {error.message}</p>
+        </AdminTableCard>
+      </AdminPage>
     );
   }
 
   const images = (data ?? []) as ImageRow[];
 
   return (
-    <section>
-      <div className="card">
-        <h1>Create Image</h1>
-        <form action={createImage}>
-          <div className="row">
-            <input name="url" placeholder="https://..." required />
-            <input name="title" placeholder="Optional title" />
-            <button type="submit">Create</button>
+    <AdminPage eyebrow="Assets" title="Images" description="Create, read, update, and delete images, including bucket uploads.">
+      <AdminTableCard title="Create Image">
+        <div className="note">
+          <p>Upload a new file to the public `images` bucket, or supply an existing public URL.</p>
+        </div>
+        <form action={createImage} className="stack-tight">
+          <div className="form-grid-wide">
+            <Field label="Upload File">
+              <Input accept="image/*" name="image_file" type="file" />
+            </Field>
+            <Field label="Existing Public URL">
+              <Input name="url" placeholder="https://..." />
+            </Field>
+            <Field label="Additional Context">
+              <Textarea name="additional_context" />
+            </Field>
+            <Field label="Image Description">
+              <Textarea name="image_description" />
+            </Field>
+            <Field label="Celebrity Recognition">
+              <Textarea name="celebrity_recognition" />
+            </Field>
+          </div>
+          <div className="cluster">
+            <label className="checkbox-field">
+              <input name="is_common_use" type="checkbox" />
+              <span>Common use image</span>
+            </label>
+            <label className="checkbox-field">
+              <input name="is_public" type="checkbox" />
+              <span>Public image</span>
+            </label>
+            <Button type="submit">Create Image</Button>
           </div>
         </form>
-      </div>
+      </AdminTableCard>
 
-      <div className="card">
-        <h2>Manage Images</h2>
-        {images.map((image) => (
-          <div key={image.id} className="card">
-            <form action={updateImage}>
-              <input type="hidden" name="id" value={image.id} />
-              <small>ID: {image.id}</small>
-              <div className="row" style={{ marginTop: "0.5rem" }}>
-                <input name="url" defaultValue={image.url} required />
-                <input name="title" defaultValue={image.title ?? ""} placeholder="Optional title" />
-                <button type="submit">Update</button>
+      <AdminTableCard title="Manage Images">
+        <div className="image-list">
+          {images.map((image) => (
+            <Card className="stack-tight" key={image.id}>
+              <div className="split">
+                <div className="stack-tight">
+                  <span className="eyebrow">Image</span>
+                  <small>
+                    {image.modified_datetime_utc ?? image.created_datetime_utc ?? "-"} · owner {image.profile_id ?? "unknown"}
+                  </small>
+                </div>
+                <a className="btn btn-secondary" href={image.url} rel="noreferrer" target="_blank">
+                  Open Asset
+                </a>
               </div>
-            </form>
-            <div className="row" style={{ marginTop: "0.5rem" }}>
-              <small>{image.created_at ? new Date(image.created_at).toLocaleString() : "-"}</small>
-              <form action={deleteImage}>
-                <input type="hidden" name="id" value={image.id} />
-                <button className="danger" type="submit">
-                  Delete
-                </button>
+              <form action={updateImage} className="stack-tight">
+                <input name="id" type="hidden" value={image.id} />
+                <div className="form-grid-wide">
+                  <Field label="Public URL">
+                    <Input defaultValue={image.url} name="url" required />
+                  </Field>
+                  <Field label="Additional Context">
+                    <Textarea defaultValue={image.additional_context ?? ""} name="additional_context" />
+                  </Field>
+                  <Field label="Image Description">
+                    <Textarea defaultValue={image.image_description ?? ""} name="image_description" />
+                  </Field>
+                  <Field label="Celebrity Recognition">
+                    <Textarea defaultValue={image.celebrity_recognition ?? ""} name="celebrity_recognition" />
+                  </Field>
+                </div>
+                <div className="cluster">
+                  <label className="checkbox-field">
+                    <input defaultChecked={image.is_common_use} name="is_common_use" type="checkbox" />
+                    <span>Common use image</span>
+                  </label>
+                  <label className="checkbox-field">
+                    <input defaultChecked={image.is_public} name="is_public" type="checkbox" />
+                    <span>Public image</span>
+                  </label>
+                  <Button type="submit" variant="secondary">
+                    Update
+                  </Button>
+                </div>
               </form>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+              <form action={deleteImage}>
+                <input name="id" type="hidden" value={image.id} />
+                <Button className="btn-danger" type="submit" variant="secondary">
+                  Delete
+                </Button>
+              </form>
+              <small>
+                <code>{image.id}</code>
+              </small>
+            </Card>
+          ))}
+        </div>
+      </AdminTableCard>
+    </AdminPage>
   );
 }

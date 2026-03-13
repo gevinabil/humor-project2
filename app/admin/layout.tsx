@@ -1,5 +1,25 @@
 import Link from "next/link";
+import { Button, Card } from "@/components/ui";
 import { requireSuperAdmin } from "@/lib/auth/guards";
+
+const navLinks = [
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/images", label: "Images" },
+  { href: "/admin/humor-flavors", label: "Humor Flavors" },
+  { href: "/admin/humor-flavor-steps", label: "Flavor Steps" },
+  { href: "/admin/humor-mix", label: "Humor Mix" },
+  { href: "/admin/terms", label: "Terms" },
+  { href: "/admin/captions", label: "Captions" },
+  { href: "/admin/caption-requests", label: "Caption Requests" },
+  { href: "/admin/caption-examples", label: "Caption Examples" },
+  { href: "/admin/llm-providers", label: "LLM Providers" },
+  { href: "/admin/llm-models", label: "LLM Models" },
+  { href: "/admin/llm-prompt-chains", label: "Prompt Chains" },
+  { href: "/admin/llm-responses", label: "LLM Responses" },
+  { href: "/admin/allowed-signup-domains", label: "Signup Domains" },
+  { href: "/admin/whitelist-email-addresses", label: "Whitelisted Emails" }
+];
 
 async function signOut() {
   "use server";
@@ -11,25 +31,32 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { user } = await requireSuperAdmin();
 
   return (
-    <main>
-      <div className="card">
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <strong>Admin Area</strong>
+    <main className="admin-shell">
+      <aside className="admin-sidebar">
+        <Card className="stack-tight" scanlines>
+          <span className="eyebrow">Admin Area</span>
+          <h2>Control Terminal</h2>
+          <p>Full operational surface for the humor application.</p>
           <small>{user.email}</small>
-        </div>
-        <div className="row" style={{ marginTop: "0.7rem" }}>
-          <Link href="/admin">Dashboard</Link>
-          <Link href="/admin/profiles">Profiles</Link>
-          <Link href="/admin/captions">Captions</Link>
-          <Link href="/admin/images">Images</Link>
+        </Card>
+
+        <Card className="stack-tight">
+          <nav className="admin-sidebar-nav" aria-label="Admin resources">
+            {navLinks.map((link) => (
+              <Link href={link.href} key={link.href}>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
           <form action={signOut}>
-            <button className="secondary" type="submit">
+            <Button type="submit" variant="secondary">
               Sign out
-            </button>
+            </Button>
           </form>
-        </div>
-      </div>
-      {children}
+        </Card>
+      </aside>
+
+      <div className="admin-content">{children}</div>
     </main>
   );
 }

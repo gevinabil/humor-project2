@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export async function requireUser() {
   const supabase = await createServerSupabaseClient();
@@ -28,4 +29,13 @@ export async function requireSuperAdmin() {
   }
 
   return { supabase, user, profile };
+}
+
+export async function requireSuperAdminDataAccess() {
+  const auth = await requireSuperAdmin();
+
+  return {
+    ...auth,
+    adminSupabase: createAdminSupabaseClient()
+  };
 }
