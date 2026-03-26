@@ -7,21 +7,25 @@ import { getNumber, getString } from "@/lib/admin/forms";
 async function createEmail(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const emailAddress = getString(formData, "email_address");
 
   if (!emailAddress) {
     return;
   }
 
-  await adminSupabase.from("whitelist_email_addresses").insert({ email_address: emailAddress });
+  await adminSupabase.from("whitelist_email_addresses").insert({
+    email_address: emailAddress,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id
+  });
   revalidatePath("/admin/whitelist-email-addresses");
 }
 
 async function updateEmail(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getNumber(formData, "id");
   const emailAddress = getString(formData, "email_address");
 
@@ -33,7 +37,7 @@ async function updateEmail(formData: FormData) {
     .from("whitelist_email_addresses")
     .update({
       email_address: emailAddress,
-      modified_datetime_utc: new Date().toISOString()
+      modified_by_user_id: user.id
     })
     .eq("id", id);
 

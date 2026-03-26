@@ -7,7 +7,7 @@ import { getNumber } from "@/lib/admin/forms";
 async function updateMix(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getNumber(formData, "id");
   const humorFlavorId = getNumber(formData, "humor_flavor_id");
   const captionCount = getNumber(formData, "caption_count");
@@ -20,7 +20,8 @@ async function updateMix(formData: FormData) {
     .from("humor_flavor_mix")
     .update({
       humor_flavor_id: humorFlavorId,
-      caption_count: captionCount
+      caption_count: captionCount,
+      modified_by_user_id: user.id
     })
     .eq("id", id);
 

@@ -7,21 +7,25 @@ import { getNumber, getString } from "@/lib/admin/forms";
 async function createProvider(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const name = getString(formData, "name");
 
   if (!name) {
     return;
   }
 
-  await adminSupabase.from("llm_providers").insert({ name });
+  await adminSupabase.from("llm_providers").insert({
+    name,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id
+  });
   revalidatePath("/admin/llm-providers");
 }
 
 async function updateProvider(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getNumber(formData, "id");
   const name = getString(formData, "name");
 
@@ -29,7 +33,7 @@ async function updateProvider(formData: FormData) {
     return;
   }
 
-  await adminSupabase.from("llm_providers").update({ name }).eq("id", id);
+  await adminSupabase.from("llm_providers").update({ name, modified_by_user_id: user.id }).eq("id", id);
   revalidatePath("/admin/llm-providers");
 }
 

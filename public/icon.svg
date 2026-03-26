@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Humor Terminal Icon</title>
+  <desc id="desc">Retro futurist neon terminal badge with cyan and magenta glow.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070812"/>
+      <stop offset="55%" stop-color="#0F1230"/>
+      <stop offset="100%" stop-color="#0B0D1F"/>
+    </linearGradient>
+    <radialGradient id="glowCyan" cx="18%" cy="18%" r="62%">
+      <stop offset="0%" stop-color="#01CDFE" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#01CDFE" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowMagenta" cx="78%" cy="24%" r="58%">
+      <stop offset="0%" stop-color="#FF71CE" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#FF71CE" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#01CDFE"/>
+      <stop offset="50%" stop-color="#B967FF"/>
+      <stop offset="100%" stop-color="#05FFA1"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glowCyan)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glowMagenta)"/>
+
+  <rect x="56" y="56" width="400" height="400" rx="84" fill="none" stroke="url(#stroke)" stroke-width="6" opacity="0.92"/>
+  <rect x="96" y="112" width="320" height="248" rx="34" fill="#09101E" fill-opacity="0.92" stroke="#01CDFE" stroke-opacity="0.5" stroke-width="4"/>
+  <circle cx="132" cy="146" r="9" fill="#FF71CE"/>
+  <circle cx="160" cy="146" r="9" fill="#FFFB96"/>
+  <circle cx="188" cy="146" r="9" fill="#05FFA1"/>
+
+  <path d="M152 222 L208 256 L152 290" fill="none" stroke="#01CDFE" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)"/>
+  <path d="M250 304 H356" fill="none" stroke="#05FFA1" stroke-width="22" stroke-linecap="round" filter="url(#softGlow)"/>
+
+  <path d="M126 390 H386" fill="none" stroke="url(#stroke)" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="8 10"/>
+</svg>

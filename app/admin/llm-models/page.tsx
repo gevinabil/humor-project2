@@ -7,7 +7,7 @@ import { getBoolean, getNumber, getString } from "@/lib/admin/forms";
 async function createModel(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const name = getString(formData, "name");
   const llmProviderId = getNumber(formData, "llm_provider_id");
   const providerModelId = getString(formData, "provider_model_id");
@@ -21,7 +21,9 @@ async function createModel(formData: FormData) {
     name,
     llm_provider_id: llmProviderId,
     provider_model_id: providerModelId,
-    is_temperature_supported: isTemperatureSupported
+    is_temperature_supported: isTemperatureSupported,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id
   });
 
   revalidatePath("/admin/llm-models");
@@ -30,7 +32,7 @@ async function createModel(formData: FormData) {
 async function updateModel(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getNumber(formData, "id");
   const name = getString(formData, "name");
   const llmProviderId = getNumber(formData, "llm_provider_id");
@@ -47,7 +49,8 @@ async function updateModel(formData: FormData) {
       name,
       llm_provider_id: llmProviderId,
       provider_model_id: providerModelId,
-      is_temperature_supported: isTemperatureSupported
+      is_temperature_supported: isTemperatureSupported,
+      modified_by_user_id: user.id
     })
     .eq("id", id);
 

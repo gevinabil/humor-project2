@@ -31,7 +31,16 @@ async function promoteSelf(formData: FormData) {
   const admin = createAdminSupabaseClient();
   const { error } = await admin
     .from("profiles")
-    .upsert({ id: user.id, email: user.email, is_superadmin: true }, { onConflict: "id" });
+    .upsert(
+      {
+        id: user.id,
+        email: user.email,
+        is_superadmin: true,
+        created_by_user_id: user.id,
+        modified_by_user_id: user.id
+      },
+      { onConflict: "id" }
+    );
 
   if (error) {
     redirect("/setup/promote?error=promotion_failed");

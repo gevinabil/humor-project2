@@ -7,7 +7,7 @@ import { getNumber, getOptionalString, getString } from "@/lib/admin/forms";
 async function createCaptionExample(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const imageDescription = getString(formData, "image_description");
   const caption = getString(formData, "caption");
   const explanation = getString(formData, "explanation");
@@ -23,7 +23,9 @@ async function createCaptionExample(formData: FormData) {
     caption,
     explanation,
     priority,
-    image_id: imageId
+    image_id: imageId,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id
   });
 
   revalidatePath("/admin/caption-examples");
@@ -32,7 +34,7 @@ async function createCaptionExample(formData: FormData) {
 async function updateCaptionExample(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getNumber(formData, "id");
   const imageDescription = getString(formData, "image_description");
   const caption = getString(formData, "caption");
@@ -52,7 +54,7 @@ async function updateCaptionExample(formData: FormData) {
       explanation,
       priority,
       image_id: imageId,
-      modified_datetime_utc: new Date().toISOString()
+      modified_by_user_id: user.id
     })
     .eq("id", id);
 

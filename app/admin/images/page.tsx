@@ -48,7 +48,9 @@ async function createImage(formData: FormData) {
     image_description: imageDescription,
     celebrity_recognition: celebrityRecognition,
     is_common_use: isCommonUse,
-    is_public: isPublic
+    is_public: isPublic,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id
   });
 
   revalidatePath("/admin/images");
@@ -58,7 +60,7 @@ async function createImage(formData: FormData) {
 async function updateImage(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getString(formData, "id");
   const url = getString(formData, "url");
   const additionalContext = getOptionalString(formData, "additional_context");
@@ -80,7 +82,7 @@ async function updateImage(formData: FormData) {
       celebrity_recognition: celebrityRecognition,
       is_common_use: isCommonUse,
       is_public: isPublic,
-      modified_datetime_utc: new Date().toISOString()
+      modified_by_user_id: user.id
     })
     .eq("id", id);
 

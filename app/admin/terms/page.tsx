@@ -7,7 +7,7 @@ import { getNumber, getString } from "@/lib/admin/forms";
 async function createTerm(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const term = getString(formData, "term");
   const definition = getString(formData, "definition");
   const example = getString(formData, "example");
@@ -23,7 +23,9 @@ async function createTerm(formData: FormData) {
     definition,
     example,
     priority,
-    term_type_id: termTypeId
+    term_type_id: termTypeId,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id
   });
 
   revalidatePath("/admin/terms");
@@ -32,7 +34,7 @@ async function createTerm(formData: FormData) {
 async function updateTerm(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getNumber(formData, "id");
   const term = getString(formData, "term");
   const definition = getString(formData, "definition");
@@ -52,7 +54,7 @@ async function updateTerm(formData: FormData) {
       example,
       priority,
       term_type_id: termTypeId,
-      modified_datetime_utc: new Date().toISOString()
+      modified_by_user_id: user.id
     })
     .eq("id", id);
 

@@ -7,21 +7,25 @@ import { getNumber, getString } from "@/lib/admin/forms";
 async function createDomain(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const apexDomain = getString(formData, "apex_domain");
 
   if (!apexDomain) {
     return;
   }
 
-  await adminSupabase.from("allowed_signup_domains").insert({ apex_domain: apexDomain });
+  await adminSupabase.from("allowed_signup_domains").insert({
+    apex_domain: apexDomain,
+    created_by_user_id: user.id,
+    modified_by_user_id: user.id
+  });
   revalidatePath("/admin/allowed-signup-domains");
 }
 
 async function updateDomain(formData: FormData) {
   "use server";
 
-  const { adminSupabase } = await requireSuperAdminDataAccess();
+  const { adminSupabase, user } = await requireSuperAdminDataAccess();
   const id = getNumber(formData, "id");
   const apexDomain = getString(formData, "apex_domain");
 
@@ -29,7 +33,10 @@ async function updateDomain(formData: FormData) {
     return;
   }
 
-  await adminSupabase.from("allowed_signup_domains").update({ apex_domain: apexDomain }).eq("id", id);
+  await adminSupabase
+    .from("allowed_signup_domains")
+    .update({ apex_domain: apexDomain, modified_by_user_id: user.id })
+    .eq("id", id);
   revalidatePath("/admin/allowed-signup-domains");
 }
 
