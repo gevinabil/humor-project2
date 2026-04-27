@@ -2,6 +2,11 @@ import Link from "next/link";
 import { Card } from "@/components/ui";
 import { requireSuperAdminDataAccess } from "@/lib/auth/guards";
 
+function formatSignedMetric(value: number) {
+  if (Object.is(value, -0)) return "0.0";
+  return value.toFixed(1);
+}
+
 const resourceGroups = [
   {
     title: "People and Access",
@@ -40,6 +45,24 @@ const resourceGroups = [
   }
 ];
 
+const statLinks: Record<string, string> = {
+  Users: "/admin/users",
+  Images: "/admin/images",
+  Captions: "/admin/captions",
+  "Positive Score": "/admin/captions",
+  "Negative Score": "/admin/captions",
+  "Caption Net Score": "/admin/captions",
+  "Avg Score / Caption": "/admin/captions",
+  "Public Captions": "/admin/captions",
+  "Featured Captions": "/admin/captions",
+  Requests: "/admin/caption-requests",
+  Examples: "/admin/caption-examples",
+  "LLM Models": "/admin/llm-models",
+  Providers: "/admin/llm-providers",
+  "Humor Flavors": "/admin/humor-flavors",
+  "Flavor Steps": "/admin/humor-flavor-steps"
+};
+
 export default async function AdminDashboard() {
   const { adminSupabase } = await requireSuperAdminDataAccess();
   const [
@@ -51,7 +74,8 @@ export default async function AdminDashboard() {
     modelsRes,
     providersRes,
     flavorsRes,
-    stepsRes
+    stepsRes,
+    captionRatingRes
   ] = await Promise.all([
     adminSupabase.from("profiles").select("id", { count: "exact", head: true }),
     adminSupabase.from("images").select("id", { count: "exact", head: true }),
@@ -61,13 +85,29 @@ export default async function AdminDashboard() {
     adminSupabase.from("llm_models").select("id", { count: "exact", head: true }),
     adminSupabase.from("llm_providers").select("id", { count: "exact", head: true }),
     adminSupabase.from("humor_flavors").select("id", { count: "exact", head: true }),
-    adminSupabase.from("humor_flavor_steps").select("id", { count: "exact", head: true })
+    adminSupabase.from("humor_flavor_steps").select("id", { count: "exact", head: true }),
+    adminSupabase.from("captions").select("id, like_count, is_public, is_featured").limit(5000)
   ]);
+
+  const ratingRows = captionRatingRes.data ?? [];
+  const totalCaptionLikes = ratingRows.reduce((sum, row) => sum + (row.like_count ?? 0), 0);
+  const positiveScoreCaptionsCount = ratingRows.filter((row) => (row.like_count ?? 0) > 0).length;
+  const negativeScoreCaptionsCount = ratingRows.filter((row) => (row.like_count ?? 0) < 0).length;
+  const publicCaptionsCount = ratingRows.filter((row) => row.is_public).length;
+  const featuredCaptionsCount = ratingRows.filter((row) => row.is_featured).length;
+  const averageScorePerCaption =
+    ratingRows.length > 0 ? formatSignedMetric(totalCaptionLikes / ratingRows.length) : "0.0";
 
   const stats = [
     { label: "Users", value: profilesRes.count ?? 0 },
     { label: "Images", value: imagesRes.count ?? 0 },
     { label: "Captions", value: captionsRes.count ?? 0 },
+    { label: "Positive Score", value: positiveScoreCaptionsCount },
+    { label: "Negative Score", value: negativeScoreCaptionsCount },
+    { label: "Caption Net Score", value: totalCaptionLikes },
+    { label: "Avg Score / Caption", value: averageScorePerCaption },
+    { label: "Public Captions", value: publicCaptionsCount },
+    { label: "Featured Captions", value: featuredCaptionsCount },
     { label: "Requests", value: requestsRes.count ?? 0 },
     { label: "Examples", value: examplesRes.count ?? 0 },
     { label: "LLM Models", value: modelsRes.count ?? 0 },
@@ -87,8 +127,10 @@ export default async function AdminDashboard() {
       <div className="stats-grid">
         {stats.map((item) => (
           <Card className="stat-card" key={item.label}>
-            <span className="stat-label">{item.label}</span>
-            <span className="stat-value">{item.value}</span>
+            <Link aria-label={`Open ${item.label}`} className="stat-link" href={statLinks[item.label] ?? "/admin"} prefetch>
+              <span className="stat-label">{item.label}</span>
+              <span className="stat-value">{item.value}</span>
+            </Link>
           </Card>
         ))}
       </div>
@@ -99,7 +141,7 @@ export default async function AdminDashboard() {
             <h2>{group.title}</h2>
             <div className="admin-nav">
               {group.links.map((link) => (
-                <Link href={link.href} key={link.href}>
+                <Link href={link.href} key={link.href} prefetch>
                   {link.label}
                 </Link>
               ))}

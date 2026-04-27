@@ -11,10 +11,16 @@ type AdminPageProps = {
 export function AdminPage({ eyebrow, title, description, children }: AdminPageProps) {
   return (
     <section className="surface-grid">
-      <Card className="stack-tight" scanlines>
-        <span className="eyebrow">{eyebrow}</span>
-        <h1>{title}</h1>
-        {description ? <p>{description}</p> : null}
+      <Card className="page-hero" scanlines>
+        <div className="page-hero-copy stack-tight">
+          <span className="eyebrow">{eyebrow}</span>
+          <h1>{title}</h1>
+          {description ? <p>{description}</p> : null}
+        </div>
+        <div className="page-hero-meta">
+          <span className="hero-chip">Live Admin View</span>
+          <span className="hero-chip">Protected Surface</span>
+        </div>
       </Card>
       {children}
     </section>
@@ -30,10 +36,14 @@ type AdminTableCardProps = {
 
 export function AdminTableCard({ eyebrow, title, description, children }: AdminTableCardProps) {
   return (
-    <Card className="stack-tight">
-      {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
-      <h2>{title}</h2>
-      {description ? <p>{description}</p> : null}
+    <Card className="stack-tight data-card">
+      <div className="section-head">
+        <div className="stack-tight">
+          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+          <h2>{title}</h2>
+          {description ? <p>{description}</p> : null}
+        </div>
+      </div>
       {children}
     </Card>
   );
